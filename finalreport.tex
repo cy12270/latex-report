@@ -1,0 +1,251 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{geometry}
+\usepackage{siunitx}
+\usepackage{cite}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage[yyyymmdd]{datetime}
+
+\restylefloat{table}
+
+\geometry{margin=1in}
+
+\tolerance=1
+\emergencystretch=\maxdimen
+\hyphenpenalty=10000
+\hbadness=10000
+
+\renewcommand{\dateseparator}{-}
+\renewcommand{\refname}{}
+
+\linespread{1}
+
+\title{Application of Neural Networks on Predicting Double Pendulum Dynamics}
+\author{LEE, Chun Yin}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\newpage
+
+%\begin{abstract}
+%This report describes the implementation of a machine learning model to predict the motion of a double pendulum. The model uses a Long Short-Term Memory (LSTM) neural network to forecast the pendulum's future states based on past trajectories. The results demonstrate the model's ability to approximate the complex dynamics of the double pendulum system.
+%\end{abstract}
+
+%\tableofcontents
+
+%\newpage
+
+\section{Introduction}
+The double pendulum is a classic problem in mechanics, known for its chaotic behavior. Predicting its motion is a challenging task due to the system's sensitivity to initial conditions\cite{levien1993double}. This report explores the use of an LSTM neural network, a type of recurrent neural network (RNN), to predict the motion of a double pendulum based on time series data.
+
+\section{Methodology}
+\subsection{Double Pendulum Dynamics}
+The double pendulum consists of two rods of lengths $L_1$ and $L_2$, and masses $m_1$ and $m_2$, respectively. The equations governing the motion of the system are derived from Newton's second law and are highly nonlinear.
+The compenents of the positions of the pendulums are given by \begin{align*}
+    x_1 &= L_1 \sin \theta_1 \\
+    y_1 &= -L_1 \cos \theta_1 \\
+    x_2 &= L_1 \sin \theta_1 + L_2 \sin \theta_2 \\
+    y_2 &= -L_1 \cos \theta_1 -L_2 \cos \theta_2 
+\end{align*} 
+
+\noindent The velocities components are \begin{align*}
+    \dot{x_1} &= L_1 \dot{\theta_1} \cos \theta_1 \\
+    \dot{y_1} &= L_1 \theta_1 \sin \theta_1 \\
+    \dot{x_2} &= L_1 \dot{\theta_1} \cos \theta_1 + L_2 \dot{\theta_2} \cos \theta_2 \\
+    \dot{y_2} &= L_1 \dot{\theta_1} \sin \theta_1 + L_2 \dot{\theta_2} \sin \theta_2
+\end{align*}
+
+\noindent With the kinetic energies and potential energies of \begin{align*}
+    T &= \frac{1}{2} m_1 (\dot{x_1}^2 + \dot{y_1}^2) + \frac{1}{2} m_1 (\dot{x_2}^2 + \dot{y_2}^2) \\
+    &= \frac{1}{2} m_1 L_1^2 \dot{\theta_1}^2 + \frac{1}{2} m_2 (L_2^2 \dot{\theta_2}^2 + 2 L_1 L_2 \dot{\theta_1} \dot{\theta_2} \cos(\theta_1 - \theta_2)) \\
+    V &= g(m_1 y_1 + m_2 y_2) \\
+    &= -g((m_1 + m_2) L_1 \cos \theta_1 + m_2 L_2 \cos \theta_2)
+\end{align*}
+
+\noindent We have the Lagrangian \begin{align*}
+    L &= \frac{1}{2} (m_1 L_1^2 \dot{\theta_1}^2 + m_2 L_2^2 \dot{\theta_2}^2) + m_2 L_1 L_2 \dot{\theta_1} \dot{\theta_2} \cos(\theta_1 - \theta_2) + g((m_1 + m_2) L_1 \cos \theta_1 + m_2 L_2 \cos \theta_2)
+\end{align*}
+
+\noindent Using the Euler-Lagrange equations, we can derive these two second-order, non-linear ordinary differential equations\cite{christian_2017} in below.
+\begin{align*}
+    (m_1 + m_2)L_2 \ddot{\theta_1} + m_2 L_2 \ddot{\theta_2} \cos(\theta_1 - \theta_2) + m_2 L_2 \dot{\theta_2}^2 \sin(\theta_1 - \theta_2) + (m_1 + m_2)g \sin\theta_1 &= 0 \\
+    m_2 L_2 \ddot{\theta_2} + m_2 L_1 \ddot{\theta_1} \cos(\theta_1 - \theta_2) + m_2 g \sin\theta_2 &= 0
+\end{align*}
+
+\subsection{Numerical Integration}
+To solve the equations of motion numerically using the \texttt{odeint} function from the \texttt{SciPy} library, we have to arrange the equations to obtain a system of first-order differential equations.
+Let $z_1 = \dot{\theta_1}$ and $z_2 = \dot{\theta_2}$, we can express $\dot{z_1}$ and $\dot{z_2}$ as \begin{align*}
+    \dot{z_1} &= \frac{m_2 g \sin\theta_2 \cos(\theta_1 - \theta_2) - m_2 \sin(\theta_1 - \theta_2)(L_1 z_1^2 \cos(\theta_1 - \theta_2) + L_2 z_2^2) - (m_1 + m_2)g \sin\theta}{L_1 (m_1 + m_2 \sin^2(\theta_1 - \theta_2))} \\
+    \dot{z_2} &= \frac{(m_1 + m_2) (L_1 z_1^2 \sin(\theta_1 - \theta_2) - g \sin\theta_2 + g \sin\theta_1 \cos(\theta_1 - \theta_2)) + m_2 L_2 z_2^2 \sin(\theta_1 - \theta_2) \cos(\theta_1 - \theta_2)}{L_2 (m_1 + m_2 \sin^2(\theta_1 - \theta_2))}
+\end{align*}  
+The initial conditions for the angles $\theta_1$ and $\theta_2$, and the initial angular velocities $z_1$ and $z_2$ are specified for numerical integration.
+
+\subsection{Neural Networks}
+Neural networks are a powerful tool in machine learning that are inspired by the human brain. They are comprised of interconnected nodes, or neurons, that work together to process and learn from data. Each neuron receives inputs, performs calculations on them, and then sends the results to other neurons. 
+This process is repeated throughout the network until a final output is produced. Each neuron is predicting a value according to the inputs, weights and bias values, which can be described by the equation \ref{eqn:neuron}.
+\begin{equation}
+    \label{eqn:neuron}
+    y = f\left(\sum_{i=1}^{n} w_i x_i + b\right)
+\end{equation}
+
+\noindent This equation calculates a weighted sum of the inputs, adds a bias $b$, and then passes the result through an activation function $f$ like sigmoid function to produce the output\cite{hossain2023machine}.
+
+\subsection{Recurrent Neural Networks}
+Recurrent Neural Networks (RNNs) are a type of artificial neural network specifically designed to handle sequential data, such as time series and natural language. Unlike traditional neural networks, RNNs have feedback connections that allow them to maintain information about previous inputs, making them suitable for tasks that require understanding context and dependencies. 
+Equation \ref{eqn:RNN} decribe a recurrent neural unit that is similar to that of a standard neural unit, with the addition of a hidden state $h_t$ in equation \ref*{eqn:hidden state}. These equations represent a single recurrent unit, where $W_h$ and $U_h$ are weight matrices for input-to-hidden connections\cite{liou2008modeling}.
+
+\begin{equation}
+    \label{eqn:RNN}
+    y_t = f(W_y \cdot h_t + b_y)
+\end{equation}
+
+\begin{equation}
+    \label{eqn:hidden state}
+    h_t = f(W_h \cdot x_t + U_h \cdot h_{t-1} + b_h)
+\end{equation}
+
+\noindent Despite their power, RNNs face challenges during training due to vanishing gradient problem \cite{tanaka2021deep}. 
+To understand the vanishing gradient problem, we need to understand how gradients behave during backpropagation, a widely-used algorithm in neuron training. Let's consider the gradient of the loss function $L$ with respect to the weight matrix $W_h$ in equation \ref{eqn:vanishing gradient}.
+\begin{equation}
+    \label{eqn:vanishing gradient}
+    \frac{\partial L}{\partial W_{h}} = \frac{\partial L}{\partial y_T} \cdot \frac{\partial y_T}{\partial h_T} \cdot \frac{\partial h_T}{\partial W_{h}}
+\end{equation}
+
+\noindent If the derivative $\frac{\partial h_t}{\partial h_{t-1}}$ is consistently less than 1 , the product of these derivatives can become vanishingly small as $T$ increases.
+\begin{equation}
+    \frac{\partial h_T}{\partial W_{h}} = \frac{\partial h_T}{\partial h_{T-1}} \cdot \frac{\partial h_{T-1}}{\partial h_{T-2}} \cdot ... \cdot \frac{\partial h_1}{\partial W_{h}}
+\end{equation}
+
+\noindent The vanishing gradient problem makes it challenging for RNNs to learn long-range dependencies because gradients become negligible, preventing effective weight updates for earlier layers. This results in the network being unable to capture important information from earlier time steps\cite{noh2021analysis}.
+
+\subsection{Long Short-Term Memory}
+Long Short-Term Memory(LSTM) is a special RNN design which aims to mitigate the vanishing gradient problem and improve the ability to capture long-term dependencies. The crucial component of the structure is 
+the cell state, which acts as a memory for the network. 
+The model includes three gates (input, forget, and output) that control the flow of information, allowing it to selectively remember or forget information. When new information flows in, 
+the input gate manipulates how much of the new input should be added to the cell state. In contrast, the forget gate determine how much of the previous cell state should be forgotten. Finally, 
+the output gate controls what part of the cell can be the output\cite{sherstinsky2020fundamentals}.  
+
+\subsection{Dataset Generation and Preprocessing}
+The true trajectories were generated using numerical integration of the double pendulum's equations of motion. We used the \texttt{odeint} solver from \texttt{SciPy} to generate the dataset for different initial conditions. The dataset included angular positions $(\theta_1, \theta_2)$ and their derivatives for two pendulum rods. 
+For each set of initial conditions, the system was simulated over 30 seconds with a time step of 0.01 seconds. The resulting dataset was then normalized using a \texttt{MinMaxScaler} to prepare it for LSTM training. Time series data were converted into sequences of 50 time steps, with the next time step as the target for prediction.
+
+\subsection{Model Architecture}
+The LSTM model is built using the \texttt{Keras} library. The input shape was (50, 4), representing 50 time steps with 4 features $(\theta_1, z_1, \theta_2, z_2)$.
+The hidden layers are two LSTM layers, each with 50 units and followed by dropout layers to prevent overfitting.
+While the output layer is a dense layer with 4 units corresponding to predictions for the next time step's input vector. The model uses Adam optimizer with Mean Squared Error (MSE) as the loss function and $\tanh$ as the activation function.
+
+\section{Results}
+
+\subsection{Training and Validation}
+The model was trained using k-fold cross-validation $(k=3)$ to ensure robustness. Training was conducted over 50 epochs with a batch size of 32. The loss (MSE) was tracked for both training and validation datasets in each fold. The following plot \ref*{fig:loss_set1_50epochs} and \ref*{fig:loss_set2_75epochs} revealed that across all folds, the training loss showed a steady decline over epochs, indicating the model's ability to fit the training data. 
+The validation loss was generally lower than the training loss, indicating that the model was generalizing reasonably well.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{loss_set1_50epochs.png}
+    \caption{Training and validation loss over 50 epochs using initial condition set 1.}
+    \label{fig:loss_set1_50epochs}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{loss_set2_75epochs.png}
+    \caption{Training and validation loss over 75 epochs using initial condition set 2.}
+    \label{fig:loss_set2_75epochs}
+\end{figure}
+
+\subsection{Model Testing and Predictions}
+The model was tested on several sets of initial conditions shown in table \ref{tab: initial conditions}. Predictions were generated for 50 time steps into the future, starting from an initial state. The LSTM model's predicted angles $\theta_1$ and $\theta_2$ were compared with the actual angles derived from the numerical solution. 
+The comparison is visualized in the following plot, which shows that the predicted trajectories by the LSTM model is relatively accurate.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{angle_set2_75epochs.png}
+    \caption{Numerical and predicted trajectories of the double pendulum using initial conditions set 2 and 75 epochs.}
+    \label{fig:angle_set2_75epochs_trajectory}
+\end{figure}
+
+\begin{table}[ht]
+    \centering
+    \caption{initial conditions for testing the model.}
+    \label{tab: initial conditions}
+    \vspace{0.25cm}
+    \begin{tabular}{ |c|c|c|c|c| } 
+        \hline
+        Initial Conditions & $\theta_1(0)$ & $z_1(0)$ & $\theta_2(0)$ & $z_2(0)$ \\
+        \hline
+        set 1 & $\pi/2$ & 0.1 & $3\pi/8$ & 0.1\\
+        set 2 & 5.501867 & -0.022843 & 5.3235213 & 0.985086\\ 
+        \hline
+        \end{tabular}
+\end{table}
+
+\noindent To assess the model's accuracy, two primary evaluation metrics were calculated and displayed in table \ref{tab:model_metrics}. 
+The Mean Squared Error (MSE) measures the average squared difference between actual and predicted values. Lower values indicate better model performance. 
+The R-squared value measures the proportion of variance in the target variable that is predictable from the input features. A score closer to 1 indicates a better fit.
+
+\break
+
+\begin{table}[ht]
+    \centering
+    \caption{Metrics for evaluating the model.} 
+    \label{tab:model_metrics}
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        Initial Conditions &  Metrics     & Epochs   & $\theta_1$  & $\theta_2$  \\
+        \hline
+         \multirow{4}{*}{set1} &   MSE   & \multirow{2}{*}{50} & 0.00081 & 0.00088 \\
+                                    &  R-squared   &      & 0.99915 & 0.99930 \\
+        \cline{2-5}
+                        &      MSE         & \multirow{2}{*}{75} & 0.00021 & 0.00007 \\
+                        &  R-squared       &              & 0.99930 & 0.99987 \\
+        \hline
+         \multirow{4}{*}{set2} &   MSE   & \multirow{2}{*}{50} & 0.00035 & 0.00094 \\
+                                    &  R-squared   &      & 0.99875 & 0.99834 \\
+        \cline{2-5}
+                        &      MSE         & \multirow{2}{*}{75} & 0.00028 & 0.00084 \\
+                        &  R-squared       &              & 0.99903 & 0.99851 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\noindent The MSE for both $\theta_1$ and $\theta_2$ is quite low, indicating that the model's predictions are very close to the actual values, suggesting excellent performance in predicting the system dynamics, 
+particularly for the first pendulum ($\theta_1$). However, this is not the case for all conditions. For example, a test initial conditions of $ \begin{bmatrix} \pi & 0 & \pi & 0 \end{bmatrix}^\mathrm{T} $ will produce a predicted trajectory which deviates from 
+the numerical result significantly in figure \ref*{fig:failed_prediction_set1}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{failed_prediction_set1.png}
+    \caption{A predicted trajectory which significantly differs from the numerical trajectory.}
+    \label{fig:failed_prediction_set1}
+\end{figure}
+
+\noindent To tackle this issue and improve generalization, augmenting training data with more diverse scenarios has been attempted. By including more initial conditions during model training, the rows of input array has been increased 
+from around 3000 rows to over 30000 rows. However, the prediction accuracy of the new model did not improve and the validation performance are worsened. As figure \ref*{fig:loss_augmented_data} indicates, the 
+validation loss in fold 2 exceeds the training loss frequently. This suggests that the model is overfitting, which means the model has learned the training data too well, including its noise and outliers. As a result, the model shows high accuracy on the training set but 
+significantly lower accuracy on the test set\cite{hossain2023machine}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{loss_augmented_data.png}
+    \caption{Training and validation loss over 50 epochs of the model with augmented training data.}
+    \label{fig:loss_augmented_data}
+\end{figure}
+\section{Conclusion}
+This report demonstrates the application of an LSTM neural network to predict the motion of a double pendulum. 
+The LSTM model successfully predicted the dynamics of the double pendulum system with reasonably accuracy in certain scenarios as demonstrated by the evaluation metrics. 
+This report also discuss the data processing and optimization techniques during model training, which is useful in solving physics problem with the help of machine learning.
+Furthermore, challenges remain for generalizing predictions by neural networks. Further improvements could be made by experimenting with more advanced neural network architectures or 
+hyperparameter tuning, which involves varying the number of layers or units. By addressing these factors, we can further refine the model's predictive capabilities.
+
+\section{References}
+\bibliography{mybib}{}
+\bibliographystyle{unsrt}
+
+\end{document}

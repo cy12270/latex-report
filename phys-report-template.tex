@@ -1,0 +1,119 @@
+\documentclass[a4paper,12pt]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+\usepackage{siunitx} % For SI units
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{booktabs} % For tables
+\usepackage{mhchem} % For chemical formulas
+
+\usepackage{multirow}
+\usepackage[yyyymmdd]{datetime}
+
+\tolerance=1
+\emergencystretch=\maxdimen
+\hyphenpenalty=10000
+\hbadness=10000
+
+\renewcommand{\dateseparator}{-}
+
+% Bibliography package with APA style
+\usepackage[style=apa, backend=biber]{biblatex}
+\addbibresource{references.bib} % Reference file
+
+% Title page information
+\title{Physics Lab Report}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+\maketitle
+\newpage
+
+% Title Page
+% \maketitle
+% \begin{center}
+%     \rule{\textwidth}{0.5mm} \[1em]
+%     \textbf{Experiment Title:} \[0.5em]
+%     \emph{Your Experiment Name Here} \[1em]
+%     \textbf{Date of Experiment:} \[0.5em]
+%     \emph{Date Here} \[1em]
+%     \rule{\textwidth}{0.5mm}
+% \end{center}
+
+% \vfill
+% \begin{center}
+%     \textbf{Abstract}
+% \end{center}
+% \begin{abstract}
+%     Write a brief summary of the purpose, methods, results, and conclusions of the experiment. Aim for 150-200 words.
+% \end{abstract}
+
+% \newpage
+
+% Table of Contents
+% \tableofcontents
+% \newpage
+
+% Sections of the Lab Report
+
+\section{Introduction}
+\label{sec:introduction}
+Provide background information, theoretical concepts, and the purpose of the experiment. Include relevant equations and define all variables. Cite sources as needed, e.g., \autocite{example1}.
+
+\section{Experimental Procedure}
+\label{sec:procedure}
+Describe the experimental setup and procedure. Include diagrams or images if necessary. Be clear and concise, providing enough detail for someone to replicate the experiment.
+
+\section{Results}
+\label{sec:results}
+Present the raw data and processed results. Use tables and graphs where appropriate. Ensure all figures and tables are labeled and referenced in the text.
+
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=0.7\textwidth]{example_graph.png} % Replace with your file
+%     \caption{Example graph showing experimental results.}
+%     \label{fig:example_graph}
+% \end{figure}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Variable & Measured Value & Uncertainty \\ 
+        \hline
+        $x$ & $10.5$ & $\pm0.2$ \\ 
+        $y$ & $15.3$ & $\pm0.1$ \\ 
+        \hline
+    \end{tabular}
+    \caption{Sample data table.}
+    \label{tab:example_table}
+\end{table}
+
+\section{Discussion}
+\label{sec:discussion}
+Analyze the results and discuss their implications. Address any discrepancies or uncertainties and propose possible sources of error. Compare the experimental results with theoretical predictions if applicable.
+
+\section{Conclusion}
+\label{sec:conclusion}
+Summarize the key findings of the experiment. Discuss whether the objectives of the experiment were achieved and suggest improvements for future experiments.
+
+\section{References}
+\label{sec:references}
+The references are formatted according to the APA citation style. All citations in the text should use the \texttt{\textbackslash autocite} or \texttt{\textbackslash cite} commands.
+
+\printbibliography % Automatically generates the bibliography
+
+% Appendix (if needed)
+\appendix
+\section{Appendix}
+\label{sec:appendix}
+Include any additional material such as raw data, derivations, or supplementary information.
+
+\end{document}
