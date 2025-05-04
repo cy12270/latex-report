@@ -1,7 +1,7 @@
 \documentclass[a4paper,12pt]{article}
 
 % Packages
-\usepackage[utf8]{inputenc}
+% \usepackage[utf8]{inputenc}
 \usepackage{amsmath, amssymb}
 \usepackage{graphicx}
 \usepackage{float}
@@ -13,6 +13,8 @@
 \usepackage{booktabs} % For tables
 \usepackage{mhchem} % For chemical formulas
 
+\usepackage{newtxtext} % Use Times-like font
+
 \usepackage{multirow}
 \usepackage[yyyymmdd]{datetime}
 
@@ -21,6 +23,9 @@
 \hyphenpenalty=10000
 \hbadness=10000
 
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em}
+
 \renewcommand{\dateseparator}{-}
 
 % Bibliography package with APA style
@@ -28,73 +33,36 @@
 \addbibresource{references.bib} % Reference file
 
 % Title page information
-\title{Physics Lab Report}
+\title{Thermal Conductivity of Solids at Low Temperatures}
 \author{Your Name}
 \date{\today}
 
 \begin{document}
 \maketitle
+\begin{abstract}
+    This report presents the methodology and results of an experiment conducted to measure the thermal conductivity of various solid materials at low temperatures. The results are analyzed, compared to literature values, and discussed in the context of thermal conduction principles.
+\end{abstract}
 \newpage
-
-% Title Page
-% \maketitle
-% \begin{center}
-%     \rule{\textwidth}{0.5mm} \[1em]
-%     \textbf{Experiment Title:} \[0.5em]
-%     \emph{Your Experiment Name Here} \[1em]
-%     \textbf{Date of Experiment:} \[0.5em]
-%     \emph{Date Here} \[1em]
-%     \rule{\textwidth}{0.5mm}
-% \end{center}
-
-% \vfill
-% \begin{center}
-%     \textbf{Abstract}
-% \end{center}
-% \begin{abstract}
-%     Write a brief summary of the purpose, methods, results, and conclusions of the experiment. Aim for 150-200 words.
-% \end{abstract}
-
-% \newpage
-
-% Table of Contents
-% \tableofcontents
-% \newpage
 
 % Sections of the Lab Report
 
-\section{Introduction}
+\section{Introduction and theory}
 \label{sec:introduction}
-Provide background information, theoretical concepts, and the purpose of the experiment. Include relevant equations and define all variables. Cite sources as needed, e.g., \autocite{example1}.
+The objective of this experiment is to measure the thermal conductivity of solid samples at low temperatures using the axial flow method. According to Fourier's law, the rate of heat transfer is proportional to the temperature gradient across the material, which allows for the determination of thermal conductivity, \( k \). The experiment aims to investigate the temperature dependence of thermal conductivity for different materials, primarily nickel and glass, and to compare the experimental results to known literature values. \autocite{example1}. \par
+Thermal conductivity describes a material's ability to conduct heat. It quantifies the rate at which thermal energy is transferred through a material due to a temperature gradient. A high thermal conductivity indicates that a material readily allows heat to flow through it, while a low thermal conductivity signifies that the material is a poor conductor of heat and acts as an insulator. Mathematically, this relationship is expressed by:
+\begin{align}
+\frac{ \mathrm{ d } Q }{ \mathrm{ d } t } = -kA\frac{ \mathrm{ d } T }{ \mathrm{ d } x }
+% Q = -k \nabla T
+\end{align}
+where $\vec{q}$ is the heat flux density (rate of heat transfer per unit area), $k$ is the thermal conductivity of the material, and $\nabla T$ is the temperature gradient. The negative sign indicates that heat flows in the direction of decreasing temperature.
 
-\section{Experimental Procedure}
+\section{Apparatus and experimental methods}
 \label{sec:procedure}
-Describe the experimental setup and procedure. Include diagrams or images if necessary. Be clear and concise, providing enough detail for someone to replicate the experiment.
+The experimental setup for measuring thermal conductivity involves using a Janis SuperVariTemp cryostat, which allows for precise temperature control from $80\unit{K}$ to room temperature. The sample, either a nickel rod or a glass plate, is mounted onto a heater within the cryostat, ensuring that the heat flow is uniaxial through the sample to minimize radial losses. Two thermocouples are attached to either side of the sample to measure the temperature difference ($\Delta T$), while the power input to the heater is recorded to calculate the heat flux. The experiment is conducted by cooling the system to thermal equilibrium, varying the temperature, and recording the necessary data at multiple points to analyze the thermal conductivity as a function of temperature.
 
-\section{Results}
+\section{Results and discussion}
 \label{sec:results}
 Present the raw data and processed results. Use tables and graphs where appropriate. Ensure all figures and tables are labeled and referenced in the text.
-
-% \begin{figure}[H]
-%     \centering
-%     \includegraphics[width=0.7\textwidth]{example_graph.png} % Replace with your file
-%     \caption{Example graph showing experimental results.}
-%     \label{fig:example_graph}
-% \end{figure}
-
-\begin{table}[H]
-    \centering
-    \begin{tabular}{|c|c|c|}
-        \hline
-        Variable & Measured Value & Uncertainty \\ 
-        \hline
-        $x$ & $10.5$ & $\pm0.2$ \\ 
-        $y$ & $15.3$ & $\pm0.1$ \\ 
-        \hline
-    \end{tabular}
-    \caption{Sample data table.}
-    \label{tab:example_table}
-\end{table}
 
 \section{Discussion}
 \label{sec:discussion}
@@ -111,9 +79,24 @@ The references are formatted according to the APA citation style. All citations 
 \printbibliography % Automatically generates the bibliography
 
 % Appendix (if needed)
+\newpage
 \appendix
-\section{Appendix}
+\section{Appendix: tables and figures}
 \label{sec:appendix}
 Include any additional material such as raw data, derivations, or supplementary information.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Variable & Measured Value & Uncertainty \\ 
+        \hline
+        $x$ & $10.5$ & $\pm0.2$ \\ 
+        $y$ & $15.3$ & $\pm0.1$ \\ 
+        \hline
+    \end{tabular}
+    \caption{Sample data table.}
+    \label{tab:example_table}
+\end{table}
 
 \end{document}
